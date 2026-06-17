@@ -25,6 +25,22 @@ const getAllUsersService = async (queryObj) => {
 };
 
 const getUserByIdService = async (id) => User.findById(id).lean();
+
+const createUserService = async (userData) => {
+  const userExists = await User.findOne({ email: userData.email });
+  if (userExists) {
+    const error = new Error("Email is already registered");
+    error.code = 11000;
+    throw error;
+  }
+  return User.create({
+    name: userData.name,
+    email: userData.email,
+    password: userData.password,
+    role: userData.role || 'user',
+  });
+};
+
 const updateUserRoleService = async (id, updateData) => {
   const user = await User.findById(id).select("+password");
   if (!user) return null;
@@ -59,6 +75,7 @@ module.exports = {
   getAdminAnalytics: getAdminStatisticsService,
   getAdminStatistics: getAdminStatisticsService,
   getAllUsers: getAllUsersService,
+  createUser: createUserService,
   getUserById: getUserByIdService,
   updateUserRole: updateUserRoleService,
   deleteUser: deleteUserService,

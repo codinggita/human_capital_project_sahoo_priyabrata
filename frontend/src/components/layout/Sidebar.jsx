@@ -23,6 +23,7 @@ const menuItems = [
 const Sidebar = () => {
   const dispatch = useDispatch();
   const { sidebarOpen, themeMode } = useSelector((state) => state.ui);
+  const { user } = useSelector((state) => state.auth);
   const isDark = themeMode === 'dark';
 
   const handleDrawerToggle = () => {
@@ -37,6 +38,10 @@ const Sidebar = () => {
   const activeShadow = isDark
     ? 'inset 3px 3px 7px rgba(0,0,0,0.55), inset -2px -2px 5px rgba(255,255,255,0.04)'
     : 'inset 4px 4px 8px #b8c1cf, inset -4px -4px 8px #ffffff';
+
+  const visibleMenuItems = menuItems.filter(
+    (item) => item.path !== '/users' || user?.role === 'admin'
+  );
 
   const drawer = (
     <Box sx={{ px: 2, py: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -59,7 +64,7 @@ const Sidebar = () => {
       </Typography>
 
       <List sx={{ flex: 1 }}>
-        {menuItems.map((item) => (
+        {visibleMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
             <motion.div
               style={{ width: '100%' }}

@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Please provide a valid email format"],
     },
+    company: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     password: {
       type: String,
       required: [true, "Please provide a password"],
@@ -41,6 +46,52 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
     passwordChangedAt: Date,
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    preferences: {
+      notifs: {
+        email: { type: Boolean, default: true },
+        analytics: { type: Boolean, default: true },
+        warnings: { type: Boolean, default: true },
+        reports: { type: Boolean, default: false },
+        aiInsights: { type: Boolean, default: true },
+        weeklyDigest: { type: Boolean, default: false },
+      },
+      aiPrefs: {
+        predictions: { type: Boolean, default: true },
+        recommendations: { type: Boolean, default: true },
+        autoReports: { type: Boolean, default: false },
+        telemetry: { type: Boolean, default: true },
+        smartInsights: { type: Boolean, default: true },
+      },
+      appearancePrefs: {
+        themeMode: { type: String, default: 'light' },
+        appearance: {
+          neumorphism: { type: Boolean, default: true },
+          animations: { type: Boolean, default: true },
+          density: { type: String, default: 'comfortable' },
+          glassIntensity: { type: Number, default: 5 },
+        }
+      }
+    },
+    stats: {
+      apiCallsToday: { type: Number, default: 0 },
+      activeSessions: { type: Number, default: 1 },
+      loginStreak: { type: Number, default: 0 },
+      securityScore: { type: Number, default: 85 }, // default base score
+      lastLoginDate: { type: Date, default: Date.now },
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    sessionsList: [
+      {
+        device: { type: String },
+        location: { type: String },
+        time: { type: Date, default: Date.now },
+      }
+    ]
   },
   {
     timestamps: true,

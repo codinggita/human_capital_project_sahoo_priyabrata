@@ -29,6 +29,74 @@ export const fetchCurrentUser = createAsyncThunk('auth/me', async (_, { rejectWi
   }
 });
 
+// Async thunk to update user profile
+export const updateUserProfile = createAsyncThunk('auth/updateProfile', async (profileData, { rejectWithValue }) => {
+  try {
+    const response = await api.put('/auth/me', profileData);
+    return response.data.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
+  }
+});
+
+// Async thunk to change password
+export const changeUserPassword = createAsyncThunk('auth/changePassword', async (passwords, { rejectWithValue }) => {
+  try {
+    const response = await api.post('/auth/change-password', passwords);
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to change password');
+  }
+});
+
+// Danger Zone Actions
+export const exportAccountData = createAsyncThunk('auth/exportData', async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.post('/auth/me/export');
+    return response.data.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to export data');
+  }
+});
+
+export const createAccountBackup = createAsyncThunk('auth/createBackup', async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.post('/auth/me/backup');
+    return response.data.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to create backup');
+  }
+});
+
+export const deactivateUserAccount = createAsyncThunk('auth/deactivate', async (_, { rejectWithValue, dispatch }) => {
+  try {
+    const response = await api.post('/auth/me/deactivate');
+    dispatch(logout());
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to deactivate account');
+  }
+});
+
+export const deleteUserAccount = createAsyncThunk('auth/delete', async (_, { rejectWithValue, dispatch }) => {
+  try {
+    const response = await api.delete('/auth/me');
+    dispatch(logout());
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to delete account');
+  }
+});
+
+export const revokeSession = createAsyncThunk('auth/revokeSession', async (sessionId, { rejectWithValue }) => {
+  try {
+    const response = await api.delete(`/auth/me/sessions/${sessionId}`);
+    return response.data.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to revoke session');
+  }
+});
+
 const initialState = {
   user: local.getUserSession() || null,
   token: local.getToken(),
@@ -79,6 +147,17 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         local.clearAll();
+      })
+      // Update profile flow
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.user = action.payload;
+        local.setUserSession(action.payload);
+      })
+      .addCase(revokeSession.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user.sessionsList = action.payload;
+          local.setUserSession(state.user);
+        }
       });
   },
 });

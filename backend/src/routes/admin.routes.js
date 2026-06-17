@@ -19,7 +19,10 @@ router.use(adminLimiter);
 router.get("/dashboard", adminController.getAdminDashboard);
 router.get("/analytics", adminController.getAdminAnalytics);
 router.get("/stats", adminController.getAdminStats);
-router.get("/users", adminController.getAllUsers);
+router
+  .route("/users")
+  .get(adminController.getAllUsers)
+  .post(adminController.createUser);
 
 // Admin-specific Prices Management
 router

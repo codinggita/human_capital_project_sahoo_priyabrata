@@ -38,6 +38,24 @@ const getAllUsers = asyncHandler(async (req, res) => {
   );
 });
 
+const createUser = asyncHandler(async (req, res) => {
+  const data = await adminService.createUser(req.body);
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to("admin_room").emit("NEW_USER_REGISTERED", {
+      _id: data._id,
+      id: data._id,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      avatar: data.avatar,
+    });
+  }
+
+  return successResponse(res, 201, "User created successfully", data);
+});
+
 const getUserById = asyncHandler(async (req, res) => {
   const data = await adminService.getUserById(req.params.id);
   return successResponse(res, 200, "User fetched successfully", data);
@@ -88,6 +106,7 @@ module.exports = {
   getAdminAnalytics,
   getAdminStats,
   getAllUsers,
+  createUser,
   getUserById,
   updateUserRole,
   deleteUser,

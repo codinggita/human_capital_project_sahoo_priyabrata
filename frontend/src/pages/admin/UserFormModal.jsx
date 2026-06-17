@@ -41,7 +41,7 @@ const UserFormModal = ({ open, onClose, editingUser, refreshUsers, selectShadow 
           await api.patch(`/admin/users/${editingUser._id || editingUser.id}`, updateData);
           toast.success('User updated successfully');
         } else {
-          await api.post('/auth/register', values);
+          await api.post('/admin/users', values);
           toast.success('User created successfully');
         }
         handleClose();

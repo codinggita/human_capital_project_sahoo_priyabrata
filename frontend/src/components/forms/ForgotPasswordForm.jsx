@@ -21,9 +21,14 @@ const ForgotPasswordForm = ({ onSuccess }) => {
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        await api.post('/auth/forgot-password', { email: values.email });
-        toast.success('Password reset token sent to email!');
+        const res = await api.post('/auth/forgot-password', { email: values.email });
+        const mockToken = res.data.data?.mockToken;
+        
+        toast.success(mockToken ? `Mock email sent! Token is: ${mockToken}` : 'Password reset token sent to email!');
         setEmailForReset(values.email);
+        if (mockToken) {
+          resetFormik.setFieldValue('token', mockToken);
+        }
         setStage('reset');
       } catch (err) {
         toast.error(err.response?.data?.message || 'Failed to send recovery token');

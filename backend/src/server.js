@@ -22,11 +22,37 @@ connectDB();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
+const { Server } = require("socket.io");
+
 // Start the Express server securely
 const server = app.listen(PORT, () => {
   console.log(
     `[🚀 Server] Running efficiently in ${NODE_ENV} mode on port ${PORT}...`,
   );
+});
+
+// Initialize Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: [
+      process.env.CLIENT_URL,
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:3000"
+    ].filter(Boolean),
+    credentials: true,
+  }
+});
+
+// Expose io instance to Express app
+app.set("io", io);
+
+// Handle connections
+io.on("connection", (socket) => {
+  // Allow admins to subscribe to admin notifications
+  socket.on("join_admin", () => {
+    socket.join("admin_room");
+  });
 });
 
 // Handle asynchronous unhandled rejections gracefully

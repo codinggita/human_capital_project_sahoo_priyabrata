@@ -9,7 +9,7 @@ const HelpOverview = () => {
   const { themeMode, appearance } = useSelector((state) => state.ui);
   const isDark = themeMode === 'dark';
   const isNeu = appearance?.neumorphism !== false;
-  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity);
+  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity, appearance.density);
 
   return (
     <Paper
