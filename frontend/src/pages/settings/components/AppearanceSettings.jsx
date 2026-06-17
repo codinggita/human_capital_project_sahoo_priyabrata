@@ -2,7 +2,7 @@ import React from 'react';
 import { Paper, Box, Typography, Slider } from '@mui/material';
 import { FiSun, FiMoon, FiLayers, FiZap, FiBarChart2 } from 'react-icons/fi';
 import { useDispatch, useSelector } from 'react-redux';
-import { toggleTheme, updateAppearance } from '../../../features/uiSlice';
+import { toggleThemeAndSave, updateAppearanceAndSave, updateAppearance } from '../../../features/uiSlice';
 import { SectionHeader, ToggleRow, getSectionCardSx } from './Shared';
 
 const AppearanceSettings = () => {
@@ -10,7 +10,7 @@ const AppearanceSettings = () => {
   const { themeMode, appearance } = useSelector((state) => state.ui);
   const isDark = themeMode === 'dark';
   const isNeu = appearance?.neumorphism !== false;
-  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity);
+  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity, appearance.density);
 
   return (
     <Paper elevation={0} sx={{ ...sectionCard, height: '100%', p: 5 }}>
@@ -26,7 +26,7 @@ const AppearanceSettings = () => {
         title="Dark Mode"
         subtitle="Toggle enterprise dark / light UI"
         checked={isDark}
-        onChange={() => dispatch(toggleTheme())}
+        onChange={() => dispatch(toggleThemeAndSave())}
         accentColor="#ff9800"
       />
       <ToggleRow
@@ -34,7 +34,7 @@ const AppearanceSettings = () => {
         title="Neumorphism Design"
         subtitle="Toggle the neumorphic 3D shadow effects"
         checked={appearance.neumorphism !== false}
-        onChange={() => dispatch(updateAppearance({ neumorphism: appearance.neumorphism === false }))}
+        onChange={() => dispatch(updateAppearanceAndSave({ neumorphism: appearance.neumorphism === false }))}
         accentColor="#ff9800"
       />
       <ToggleRow
@@ -42,7 +42,7 @@ const AppearanceSettings = () => {
         title="Smooth Animations"
         subtitle="Framer Motion transitions & micro-interactions"
         checked={appearance.animations}
-        onChange={() => dispatch(updateAppearance({ animations: !appearance.animations }))}
+        onChange={() => dispatch(updateAppearanceAndSave({ animations: !appearance.animations }))}
         accentColor="#ff9800"
       />
       <ToggleRow
@@ -51,7 +51,7 @@ const AppearanceSettings = () => {
         subtitle="Tighter layout for more data per view"
         checked={appearance.density === 'compact'}
         onChange={() =>
-          dispatch(updateAppearance({
+          dispatch(updateAppearanceAndSave({
             density: appearance.density === 'compact' ? 'comfortable' : 'compact',
           }))
         }
@@ -66,16 +66,36 @@ const AppearanceSettings = () => {
           </Typography>
         </Box>
         <Slider
-          value={appearance.glassIntensity}
+          value={typeof appearance.glassIntensity === 'number' ? appearance.glassIntensity : 60}
           onChange={(_, v) => dispatch(updateAppearance({ glassIntensity: v }))}
+          onChangeCommitted={(_, v) => dispatch(updateAppearanceAndSave({ glassIntensity: v }))}
           min={0} max={100}
           sx={{
             color: '#ff9800',
+            height: 6,
+            p: '15px 0',
             '& .MuiSlider-thumb': {
-              boxShadow: '0 0 12px #ff980066',
-              '&:hover': { boxShadow: '0 0 20px #ff980088' },
+              height: 22,
+              width: 22,
+              backgroundColor: '#ff9800',
+              boxShadow: '0 2px 10px #ff980066',
+              '&:hover, &.Mui-focusVisible, &.Mui-active': {
+                boxShadow: '0 0 0 8px rgba(255, 152, 0, 0.16)',
+              },
+              '&::before': {
+                display: 'none',
+              },
             },
-            '& .MuiSlider-rail': { opacity: 0.2 },
+            '& .MuiSlider-track': {
+              border: 'none',
+              height: 6,
+              borderRadius: 3,
+            },
+            '& .MuiSlider-rail': {
+              opacity: 0.2,
+              height: 6,
+              borderRadius: 3,
+            },
           }}
         />
       </Box>

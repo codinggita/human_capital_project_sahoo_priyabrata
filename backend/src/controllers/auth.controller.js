@@ -2,9 +2,31 @@ const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/responseFormatter");
 const authService = require("../services/auth.service");
 
+// Extract simple device info
+const getDeviceInfo = (req) => {
+  const ua = req.headers["user-agent"] || "Unknown Device";
+  let browser = "Unknown";
+  if (ua.includes("Firefox")) browser = "Firefox";
+  else if (ua.includes("Chrome")) browser = "Chrome";
+  else if (ua.includes("Safari")) browser = "Safari";
+  
+  let os = "Unknown";
+  if (ua.includes("Windows")) os = "Windows";
+  else if (ua.includes("Mac")) os = "macOS";
+  else if (ua.includes("Linux")) os = "Linux";
+  else if (ua.includes("iPhone")) os = "iPhone";
+  else if (ua.includes("Android")) os = "Android";
+
+  return {
+    device: `${browser} · ${os}`,
+    location: req.ip === "::1" || req.ip === "127.0.0.1" ? "Localhost" : req.ip,
+  };
+};
+
 // Call service layer for user registration
 const register = asyncHandler(async (req, res) => {
-  const { data, token } = await authService.registerUser(req.body);
+  const deviceInfo = getDeviceInfo(req);
+  const { data, token } = await authService.registerUser(req.body, deviceInfo);
 
   res.cookie("token", token, {
     expires: new Date(Date.now() + 15 * 60 * 1000),
@@ -12,6 +34,18 @@ const register = asyncHandler(async (req, res) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "Lax",
   });
+
+  const io = req.app.get("io");
+  if (io) {
+    io.to("admin_room").emit("NEW_USER_REGISTERED", {
+      _id: data._id,
+      id: data._id,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      avatar: data.avatar,
+    });
+  }
 
   return successResponse(res, 201, "User registered successfully", {
     user: data,
@@ -21,7 +55,8 @@ const register = asyncHandler(async (req, res) => {
 
 // Call service layer for user login
 const login = asyncHandler(async (req, res) => {
-  const { data, token } = await authService.loginUser(req.body);
+  const deviceInfo = getDeviceInfo(req);
+  const { data, token } = await authService.loginUser(req.body, deviceInfo);
 
   res.cookie("token", token, {
     expires: new Date(Date.now() + 15 * 60 * 1000),
@@ -47,8 +82,8 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 const forgotPassword = asyncHandler(async (req, res) => {
-  await authService.forgotPassword(req.body.email);
-  return successResponse(res, 200, "Password reset token sent to email");
+  const { mockToken } = await authService.forgotPassword(req.body.email);
+  return successResponse(res, 200, "Password reset token sent to email", { mockToken });
 });
 
 const resetPassword = asyncHandler(async (req, res) => {
@@ -89,6 +124,41 @@ const changePassword = asyncHandler(async (req, res) => {
   return successResponse(res, 200, "Password changed successfully");
 });
 
+const updatePreferences = asyncHandler(async (req, res) => {
+  const preferences = await authService.updatePreferences(req.user.id, req.body);
+  return successResponse(res, 200, "Preferences updated successfully", preferences);
+});
+
+const updateProfile = asyncHandler(async (req, res) => {
+  const user = await authService.updateProfile(req.user.id, req.body);
+  return successResponse(res, 200, "Profile updated successfully", user);
+});
+
+const exportData = asyncHandler(async (req, res) => {
+  const data = await authService.exportData(req.user.id);
+  return successResponse(res, 200, "Account data exported successfully", data);
+});
+
+const createBackup = asyncHandler(async (req, res) => {
+  const data = await authService.createBackup(req.user.id);
+  return successResponse(res, 200, "Backup created successfully", data);
+});
+
+const deactivateAccount = asyncHandler(async (req, res) => {
+  await authService.deactivateAccount(req.user.id);
+  return successResponse(res, 200, "Account deactivated successfully");
+});
+
+const deleteAccount = asyncHandler(async (req, res) => {
+  await authService.deleteAccount(req.user.id);
+  return successResponse(res, 200, "Account permanently deleted");
+});
+
+const revokeSession = asyncHandler(async (req, res) => {
+  const sessions = await authService.revokeSession(req.user.id, req.params.sessionId);
+  return successResponse(res, 200, "Session revoked successfully", sessions);
+});
+
 module.exports = {
   register,
   login,
@@ -102,4 +172,11 @@ module.exports = {
   sendOtp,
   verifyOtp,
   changePassword,
+  updatePreferences,
+  updateProfile,
+  exportData,
+  createBackup,
+  deactivateAccount,
+  deleteAccount,
+  revokeSession,
 };

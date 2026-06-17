@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppBar, Toolbar, Typography, IconButton, Box, Button, Avatar, Chip } from '@mui/material';
+import { AppBar, Toolbar, Typography, IconButton, Box, Button, Avatar, Chip, Badge, Menu, MenuItem, Divider } from '@mui/material';
 import { FiMenu, FiMoon, FiSun, FiLogOut, FiActivity, FiZap, FiBell } from 'react-icons/fi';
-import { toggleSidebar, toggleTheme } from '../../features/uiSlice';
+import { toggleSidebar, toggleTheme, markAllNotificationsRead } from '../../features/uiSlice';
 import { logout } from '../../features/authSlice';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -10,9 +10,23 @@ import { motion } from 'framer-motion';
 const Topbar = () => {
   const dispatch  = useDispatch();
   const navigate  = useNavigate();
-  const { themeMode } = useSelector((state) => state.ui);
+  const { themeMode, notificationsList } = useSelector((state) => state.ui);
   const { user }      = useSelector((state) => state.auth);
   const isDark = themeMode === 'dark';
+
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openMenu = Boolean(anchorEl);
+
+  const handleNotificationClick = (e) => {
+    setAnchorEl(e.currentTarget);
+    dispatch(markAllNotificationsRead());
+  };
+
+  const handleNotificationClose = () => {
+    setAnchorEl(null);
+  };
+
+  const unreadCount = notificationsList?.filter(n => !n.read).length || 0;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -140,6 +154,7 @@ const Topbar = () => {
 
           {/* Notification bell */}
           <IconButton
+            onClick={handleNotificationClick}
             size="small"
             sx={{
               display: { xs: 'none', sm: 'flex' },
@@ -154,8 +169,50 @@ const Topbar = () => {
               color: 'text.secondary',
             }}
           >
-            <FiBell size={16} />
+            <Badge badgeContent={unreadCount} color="error" variant="dot" invisible={unreadCount === 0}>
+              <FiBell size={16} />
+            </Badge>
           </IconButton>
+
+          {/* Notifications Dropdown */}
+          <Menu
+            anchorEl={anchorEl}
+            open={openMenu}
+            onClose={handleNotificationClose}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            PaperProps={{
+              sx: {
+                mt: 1.5, width: 320, maxHeight: 400,
+                bgcolor: isDark ? '#1a1f2e' : '#E6ECF5',
+                backgroundImage: 'none',
+                boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.8)' : '0 8px 24px rgba(149,157,165,0.2)',
+                border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.05)',
+                borderRadius: 4
+              }
+            }}
+          >
+            <Box sx={{ px: 2, py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Notifications</Typography>
+              {unreadCount > 0 && <Chip size="small" color="primary" label={`${unreadCount} New`} sx={{ height: 20, fontSize: '0.65rem' }}/>}
+            </Box>
+            <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}/>
+            {(!notificationsList || notificationsList.length === 0) ? (
+              <Box sx={{ px: 2, py: 4, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">No new notifications</Typography>
+              </Box>
+            ) : (
+              notificationsList.map((notif) => (
+                <MenuItem key={notif.id} sx={{ px: 2, py: 1.5, borderBottom: isDark ? '1px solid rgba(255,255,255,0.03)' : '1px solid rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: isDark ? '#f0f4ff' : '#1E293B' }}>{notif.title}</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.3, whiteSpace: 'normal' }}>{notif.message}</Typography>
+                  <Typography variant="caption" sx={{ color: 'primary.main', fontSize: '0.65rem', mt: 1, fontWeight: 700 }}>
+                    {new Date(notif.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </Typography>
+                </MenuItem>
+              ))
+            )}
+          </Menu>
 
           {/* Theme toggle */}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

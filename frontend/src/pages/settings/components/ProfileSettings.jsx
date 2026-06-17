@@ -1,35 +1,95 @@
-import React, { useState } from 'react';
-import { Box, Paper, Grid, TextField, Button, Avatar, Chip, LinearProgress, Tooltip, IconButton, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Paper, Grid, TextField, Button, Avatar, Chip, LinearProgress, Tooltip, IconButton, Typography, Snackbar, Alert } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiUser, FiMail, FiBriefcase, FiCamera, FiSave, FiLock, FiShield, FiKey, FiGlobe, FiRefreshCw, FiEye, FiEyeOff } from 'react-icons/fi';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateUserProfile, changeUserPassword, revokeSession } from '../../../features/authSlice';
 import { SectionHeader, SessionCard, getSectionCardSx, getTextFieldSx } from './Shared';
 
 const ProfileSettings = () => {
+  const dispatch = useDispatch();
   const { themeMode, appearance } = useSelector((state) => state.ui);
+  const { user } = useSelector((state) => state.auth);
   const isDark = themeMode === 'dark';
   const isNeu = appearance?.neumorphism !== false;
-  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity);
+  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity, appearance.density);
   const textFieldSx = getTextFieldSx(isDark, isNeu);
 
   const [profileSaved, setProfileSaved] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    name: 'Enterprise Admin',
-    email: 'admin@humancapital.io',
-    company: 'Human Capital Analytics',
-    role: 'Super Admin',
-    password: '',
-    newPassword: '',
-  });
+  const [passMessage, setPassMessage] = useState(null);
+  
+  const initialProfileState = {
+    name: user?.name || '',
+    email: user?.email || '',
+    company: user?.company || '',
+    role: user?.role || 'user',
+    avatar: user?.avatar || 'default-avatar.png',
+  };
+  
+  const [formData, setFormData] = useState(initialProfileState);
+  const [passData, setPassData] = useState({ oldPassword: '', newPassword: '' });
 
-  const handleSave = () => {
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 2500);
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        company: user.company || '',
+        role: user.role || 'user',
+        avatar: user.avatar || 'default-avatar.png',
+      });
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    try {
+      await dispatch(updateUserProfile({
+        name: formData.name,
+        email: formData.email,
+        company: formData.company,
+        avatar: formData.avatar,
+      })).unwrap();
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2500);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const filled = [formData.name, formData.email, formData.company, formData.role].filter(Boolean).length;
-  const completionPct = Math.round((filled / 4) * 100);
+  const handleReset = () => {
+    setFormData(initialProfileState);
+  };
+  
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // Limit to 2MB
+        return alert("File size must be less than 2MB");
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, avatar: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleUpdatePassword = async () => {
+    try {
+      await dispatch(changeUserPassword(passData)).unwrap();
+      setPassMessage({ type: 'success', text: 'Password updated successfully!' });
+      setPassData({ oldPassword: '', newPassword: '' });
+    } catch (err) {
+      setPassMessage({ type: 'error', text: err || 'Failed to update password' });
+    }
+  };
+
+  const isAvatarFilled = formData.avatar && formData.avatar !== 'default-avatar.png';
+  const filled = [formData.name, formData.email, formData.company, formData.role, isAvatarFilled].filter(Boolean).length;
+  const completionPct = Math.round((filled / 5) * 100);
+
+  const avatarLetters = formData.name ? formData.name.substring(0, 2).toUpperCase() : 'U';
 
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 4, width: '100%', alignItems: 'start' }}>
@@ -44,16 +104,18 @@ const ProfileSettings = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 4 }}>
           <Box sx={{ position: 'relative' }}>
             <Avatar
+              src={formData.avatar && formData.avatar !== 'default-avatar.png' ? formData.avatar : undefined}
               sx={{
                 width: 80, height: 80, fontSize: '1.8rem', fontWeight: 900,
                 background: 'linear-gradient(135deg, #ff6038, #ff8a50)',
                 boxShadow: '0 8px 24px #ff603844',
               }}
             >
-              EA
+              {!formData.avatar || formData.avatar === 'default-avatar.png' ? avatarLetters : ''}
             </Avatar>
             <Tooltip title="Upload photo">
               <IconButton
+                component="label"
                 size="small"
                 sx={{
                   position: 'absolute', bottom: -4, right: -4,
@@ -64,6 +126,12 @@ const ProfileSettings = () => {
                 }}
               >
                 <FiCamera size={13} />
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                />
               </IconButton>
             </Tooltip>
           </Box>
@@ -141,7 +209,7 @@ const ProfileSettings = () => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth label="Role / Title" value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              disabled
               sx={textFieldSx}
               InputProps={{ startAdornment: <FiShield style={{ marginRight: 8, color: '#4caf50', opacity: 0.7 }} /> }}
             />
@@ -190,6 +258,7 @@ const ProfileSettings = () => {
           <Button
             variant="outlined"
             startIcon={<FiRefreshCw />}
+            onClick={handleReset}
             sx={{
               borderRadius: '14px', py: 1.4, fontWeight: 700,
               borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)',
@@ -216,8 +285,8 @@ const ProfileSettings = () => {
             <TextField
               fullWidth label="Current Password"
               type={showPassword ? 'text' : 'password'}
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              value={passData.oldPassword}
+              onChange={(e) => setPassData({ ...passData, oldPassword: e.target.value })}
               sx={textFieldSx}
               InputProps={{
                 startAdornment: <FiLock style={{ marginRight: 8, color: '#2196f3', opacity: 0.7 }} />,
@@ -232,9 +301,9 @@ const ProfileSettings = () => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth label="New Password"
-              type="password"
-              value={formData.newPassword}
-              onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+              type={showPassword ? 'text' : 'password'}
+              value={passData.newPassword}
+              onChange={(e) => setPassData({ ...passData, newPassword: e.target.value })}
               sx={textFieldSx}
               InputProps={{ startAdornment: <FiKey style={{ marginRight: 8, color: '#9c27b0', opacity: 0.7 }} /> }}
             />
@@ -265,13 +334,27 @@ const ProfileSettings = () => {
         <Typography variant="subtitle2" fontWeight="800" sx={{ mb: 1.5, color: 'text.secondary', letterSpacing: '0.05em' }}>
           ACTIVE SESSIONS
         </Typography>
-        <SessionCard device="Chrome · macOS" location="Mumbai, IN" time="Now" current isDark={isDark} isNeu={isNeu} />
-        <SessionCard device="Safari · iPhone 15" location="Delhi, IN" time="2h ago" isDark={isDark} isNeu={isNeu} />
-        <SessionCard device="Firefox · Windows 11" location="Bangalore, IN" time="Yesterday" isDark={isDark} isNeu={isNeu} />
+        
+        {user?.sessionsList?.length > 0 ? user.sessionsList.slice().reverse().map((session, index) => (
+          <SessionCard 
+            key={session._id || index}
+            device={session.device} 
+            location={session.location} 
+            time={new Date(session.time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 
+            current={index === 0} 
+            isDark={isDark} 
+            isNeu={isNeu} 
+            onRevoke={() => dispatch(revokeSession(session._id))}
+          />
+        )) : (
+          <SessionCard device="Chrome · Windows" location="Localhost" time="Now" current isDark={isDark} isNeu={isNeu} />
+        )}
 
         <Button
           variant="contained"
           startIcon={<FiLock />}
+          onClick={handleUpdatePassword}
+          disabled={!passData.oldPassword || !passData.newPassword}
           sx={{
             mt: 2, borderRadius: '14px', py: 1.4, fontWeight: 800,
             background: 'linear-gradient(135deg, #2196f3, #42a5f5)',
@@ -282,6 +365,12 @@ const ProfileSettings = () => {
           Update Password
         </Button>
       </Paper>
+      
+      <Snackbar open={!!passMessage} autoHideDuration={4000} onClose={() => setPassMessage(null)}>
+        <Alert onClose={() => setPassMessage(null)} severity={passMessage?.type} sx={{ width: '100%' }}>
+          {passMessage?.text}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

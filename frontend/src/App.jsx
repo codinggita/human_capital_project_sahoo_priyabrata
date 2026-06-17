@@ -7,13 +7,16 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { store } from './store/store';
 import AppRoutes from './routes/AppRoutes';
 import { fetchCurrentUser } from './features/authSlice';
+import { userAddedRealtime } from './features/userSlice';
+import { addNotification } from './features/uiSlice';
+import { socket } from './services/socket';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { ThemeContextProvider } from './context/ThemeContext';
 
 const AppContent = () => {
   const dispatch = useDispatch();
   const { themeMode, appearance } = useSelector((state) => state.ui);
-  const { token } = useSelector((state) => state.auth);
+  const { token, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     // Auto-login: Validates JWT token and fetches user profile on initial mount
@@ -21,6 +24,32 @@ const AppContent = () => {
       dispatch(fetchCurrentUser());
     }
   }, [dispatch, token]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      socket.connect();
+      socket.emit('join_admin');
+
+      const handleNewUser = (newUser) => {
+        toast.success(`New user ${newUser.name} just joined!`, { icon: '👋', duration: 5000 });
+        dispatch(userAddedRealtime(newUser));
+        dispatch(addNotification({
+          id: Date.now().toString(),
+          title: 'New Registration 🎉',
+          message: `${newUser.name} (${newUser.email}) just registered as a ${newUser.role}.`,
+          read: false,
+          time: new Date().toISOString()
+        }));
+      };
+
+      socket.on('NEW_USER_REGISTERED', handleNewUser);
+
+      return () => {
+        socket.off('NEW_USER_REGISTERED', handleNewUser);
+        socket.disconnect();
+      };
+    }
+  }, [user, dispatch]);
 
   const theme = useMemo(() => {
     const isDark = themeMode === 'dark';

@@ -31,8 +31,8 @@ const protect = asyncHandler(async (req, res, next) => {
     // Verify token expiration and signature
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Attach user payload to request object, excluding password
-    req.user = await User.findById(decoded.id).select("-password");
+    // Attach user payload to request object, excluding password, and increment api calls
+    req.user = await User.findByIdAndUpdate(decoded.id, { $inc: { "stats.apiCallsToday": 1 } }, { new: true }).select("-password");
 
     if (!req.user) {
       return errorResponse(
@@ -68,6 +68,8 @@ const verifyJWT = (req, res, next) => {
 
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
+    // Increment API calls asynchronously without blocking
+    User.findByIdAndUpdate(req.user.id, { $inc: { "stats.apiCallsToday": 1 } }).exec().catch(() => {});
     next();
   } catch (_) {
     return errorResponse(res, 401, "Invalid or expired token");

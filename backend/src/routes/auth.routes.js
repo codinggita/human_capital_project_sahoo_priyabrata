@@ -75,4 +75,12 @@ router.post(
   authController.changePassword,
 );
 
+router.put("/me", authController.updateProfile);
+router.put("/me/preferences", authController.updatePreferences);
+router.post("/me/export", authController.exportData);
+router.post("/me/backup", authController.createBackup);
+router.post("/me/deactivate", authController.deactivateAccount);
+router.delete("/me", authController.deleteAccount);
+router.delete("/me/sessions/:sessionId", authController.revokeSession);
+
 module.exports = router;

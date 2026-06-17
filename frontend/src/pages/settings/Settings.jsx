@@ -15,11 +15,19 @@ import DangerZoneSettings from './components/DangerZoneSettings';
 
 const Settings = () => {
   const { themeMode, appearance } = useSelector((state) => state.ui);
+  const { user } = useSelector((state) => state.auth);
   const isDark = themeMode === 'dark';
   const isNeu = appearance?.neumorphism !== false;
-  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity);
+  const isCompact = appearance?.density === 'compact';
+  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity, appearance.density);
 
   const [helpOpen, setHelpOpen] = useState(false);
+
+  const stats = user?.stats || {};
+  const apiCalls = stats.apiCallsToday?.toLocaleString() || '0';
+  const activeSessions = stats.activeSessions || '0';
+  const loginStreak = stats.loginStreak || '0';
+  const securityScore = stats.securityScore || '85';
 
   return (
     <motion.div
@@ -66,16 +74,16 @@ const Settings = () => {
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' },
-          gap: 4,
-          mb: 5,
+          gap: isCompact ? 2 : 4,
+          mb: isCompact ? 3.5 : 5,
           width: '100%',
         }}
       >
         {[
-          { label: 'API Calls Today', value: '1,284', delta: '+12%', color: '#2196f3', icon: <FiActivity /> },
-          { label: 'Active Sessions', value: '3', delta: 'Devices', color: '#4caf50', icon: <FiMonitor /> },
-          { label: 'Login Streak', value: '14 days', delta: 'Consistent', color: '#ff7b00', icon: <FiZap /> },
-          { label: 'Security Score', value: '87/100', delta: 'Strong', color: '#9c27b0', icon: <FiShield /> },
+          { label: 'API Calls Today', value: apiCalls, delta: '+12%', color: '#2196f3', icon: <FiActivity /> },
+          { label: 'Active Sessions', value: activeSessions, delta: 'Devices', color: '#4caf50', icon: <FiMonitor /> },
+          { label: 'Login Streak', value: `${loginStreak} days`, delta: 'Consistent', color: '#ff7b00', icon: <FiZap /> },
+          { label: 'Security Score', value: `${securityScore}/100`, delta: 'Strong', color: '#9c27b0', icon: <FiShield /> },
         ].map((kpi, i) => (
           <Paper
             key={i}
@@ -85,12 +93,12 @@ const Settings = () => {
             transition={{ type: 'spring', stiffness: 350, damping: 25 }}
             sx={{
               ...sectionCard,
-              p: 5,
+              p: isCompact ? 3.5 : 5,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
               gap: 1.5,
-              minHeight: 230,
+              minHeight: isCompact ? 180 : 230,
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -126,7 +134,7 @@ const Settings = () => {
       <ProfileSettings />
 
       {/* ─── 3-COLUMN PREFERENCE CARDS ROW ─── */}
-      <Grid container spacing={8} sx={{ mt: 4 }}>
+      <Grid container spacing={isCompact ? 4 : 8} sx={{ mt: isCompact ? 2 : 4 }}>
         <Grid item xs={12} md={4}>
           <AppearanceSettings />
         </Grid>

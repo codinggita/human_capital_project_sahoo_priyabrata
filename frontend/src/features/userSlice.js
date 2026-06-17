@@ -24,6 +24,13 @@ const userSlice = createSlice({
     clearUsers: (state) => {
       state.usersList = [];
     },
+    userAddedRealtime: (state, action) => {
+      // Add only if not already exists
+      const exists = state.usersList.find(u => (u._id || u.id) === (action.payload._id || action.payload.id));
+      if (!exists && state.usersList.length > 0) {
+        state.usersList.push(action.payload);
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -42,5 +49,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { clearUsers } = userSlice.actions;
+export const { clearUsers, userAddedRealtime } = userSlice.actions;
 export default userSlice.reducer;

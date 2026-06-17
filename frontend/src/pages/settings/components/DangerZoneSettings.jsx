@@ -2,27 +2,59 @@ import React, { useState } from 'react';
 import { Paper, Box, Typography, Grid, Button, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { FiAlertTriangle, FiDownload, FiSmartphone, FiToggleLeft, FiTrash2, FiCheck } from 'react-icons/fi';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { SectionHeader, getSectionCardSx } from './Shared';
+import { exportAccountData, createAccountBackup, deactivateUserAccount, deleteUserAccount } from '../../../features/authSlice';
 
 const DangerZoneSettings = () => {
+  const dispatch = useDispatch();
   const { themeMode, appearance } = useSelector((state) => state.ui);
   const isDark = themeMode === 'dark';
   const isNeu = appearance?.neumorphism !== false;
-  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity);
+  const sectionCard = getSectionCardSx(isDark, isNeu, appearance.glassIntensity, appearance.density);
 
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [actionStates, setActionStates] = useState({});
 
-  const handleDangerAction = (id) => {
+  const downloadJson = (data, filename) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDangerAction = async (id) => {
     setActionStates((p) => ({ ...p, [id]: 'loading' }));
-    setTimeout(() => {
+    
+    try {
+      let result;
+      if (id === 'export') {
+        result = await dispatch(exportAccountData()).unwrap();
+        downloadJson(result, 'account_export.json');
+      } else if (id === 'backup') {
+        result = await dispatch(createAccountBackup()).unwrap();
+        downloadJson(result, 'workspace_backup.json');
+      } else if (id === 'deactivate') {
+        await dispatch(deactivateUserAccount()).unwrap();
+      } else if (id === 'delete') {
+        await dispatch(deleteUserAccount()).unwrap();
+      }
+
       setActionStates((p) => ({ ...p, [id]: 'success' }));
       setTimeout(() => {
         setActionStates((p) => ({ ...p, [id]: null }));
         if (id === 'delete') setDeleteConfirm(false);
       }, 2000);
-    }, 1500);
+    } catch (err) {
+      console.error(`Failed action ${id}:`, err);
+      setActionStates((p) => ({ ...p, [id]: null }));
+      if (id === 'delete') setDeleteConfirm(false);
+    }
   };
 
   return (
