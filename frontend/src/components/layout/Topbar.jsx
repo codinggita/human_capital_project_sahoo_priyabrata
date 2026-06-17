@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppBar, Toolbar, Typography, IconButton, Box, Button, Avatar, Chip, Badge, Menu, MenuItem, Divider } from '@mui/material';
 import { FiMenu, FiMoon, FiSun, FiLogOut, FiActivity, FiZap, FiBell } from 'react-icons/fi';
-import { toggleSidebar, toggleTheme, markAllNotificationsRead } from '../../features/uiSlice';
+import { toggleSidebar, toggleThemeAndSave, markAllNotificationsRead } from '../../features/uiSlice';
 import { logout } from '../../features/authSlice';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -217,7 +217,7 @@ const Topbar = () => {
           {/* Theme toggle */}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Box
-              onClick={() => dispatch(toggleTheme())}
+              onClick={() => dispatch(toggleThemeAndSave())}
               sx={{
                 display: 'flex',
                 alignItems: 'center',

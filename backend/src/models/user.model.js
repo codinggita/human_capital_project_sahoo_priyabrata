@@ -65,7 +65,7 @@ const userSchema = new mongoose.Schema(
         smartInsights: { type: Boolean, default: true },
       },
       appearancePrefs: {
-        themeMode: { type: String, default: 'dark' },
+        themeMode: { type: String, default: 'light' },
         appearance: {
           neumorphism: { type: Boolean, default: true },
           animations: { type: Boolean, default: true },
