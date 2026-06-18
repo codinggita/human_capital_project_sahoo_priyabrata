@@ -124,6 +124,9 @@ const uiSlice = createSlice({
     markAllNotificationsRead: (state) => {
       state.notificationsList.forEach(n => n.read = true);
     },
+    clearAllNotifications: (state) => {
+      state.notificationsList = [];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -172,6 +175,6 @@ const uiSlice = createSlice({
 export const {
   toggleTheme, toggleSidebar, setSidebarOpen,
   updateAppearance, toggleNotif, toggleAiPref,
-  addNotification, markAllNotificationsRead
+  addNotification, markAllNotificationsRead, clearAllNotifications
 } = uiSlice.actions;
 export default uiSlice.reducer;

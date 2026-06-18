@@ -34,12 +34,7 @@ const server = app.listen(PORT, () => {
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: [
-      process.env.CLIENT_URL,
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:3000"
-    ].filter(Boolean),
+    origin: true,
     credentials: true,
   }
 });
@@ -49,9 +44,15 @@ app.set("io", io);
 
 // Handle connections
 io.on("connection", (socket) => {
+  console.log("New socket connected:", socket.id);
   // Allow admins to subscribe to admin notifications
   socket.on("join_admin", () => {
+    console.log("Socket joined admin_room:", socket.id);
     socket.join("admin_room");
+  });
+  
+  socket.on("disconnect", () => {
+    console.log("Socket disconnected:", socket.id);
   });
 });
 

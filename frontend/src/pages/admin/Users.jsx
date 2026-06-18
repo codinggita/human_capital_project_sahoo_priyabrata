@@ -122,14 +122,14 @@ const Users = () => {
         <Typography variant="h4" fontWeight="bold" color="primary">
           User Management
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', md: 'auto' } }}>
           <Input
             placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ width: 250 }}
+            sx={{ width: { xs: '100%', sm: 250 } }}
           />
-          <Button startIcon={<FiUserPlus />} onClick={() => handleOpenModal()}>
+          <Button startIcon={<FiUserPlus />} onClick={() => handleOpenModal()} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Add User
           </Button>
         </Box>

@@ -2,13 +2,13 @@ import React, { useMemo, useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { HelmetProvider } from 'react-helmet-async';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { store } from './store/store';
 import AppRoutes from './routes/AppRoutes';
 import { fetchCurrentUser } from './features/authSlice';
 import { userAddedRealtime } from './features/userSlice';
-import { addNotification } from './features/uiSlice';
+import { addNotification, clearAllNotifications } from './features/uiSlice';
 import { socket } from './services/socket';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { ThemeContextProvider } from './context/ThemeContext';
@@ -26,17 +26,52 @@ const AppContent = () => {
   }, [dispatch, token]);
 
   useEffect(() => {
+    // Clear notifications every 3 hours (3 * 60 * 60 * 1000 ms)
+    const THREE_HOURS = 3 * 60 * 60 * 1000;
+    const clearNotifsInterval = setInterval(() => {
+      dispatch(clearAllNotifications());
+    }, THREE_HOURS);
+
+    return () => clearInterval(clearNotifsInterval);
+  }, [dispatch]);
+
+  useEffect(() => {
     if (user?.role === 'admin') {
       socket.connect();
-      socket.emit('join_admin');
+
+      const onConnect = () => {
+        console.log("Socket connected! Joining admin room.");
+        socket.emit('join_admin');
+      };
+
+      socket.on('connect', onConnect);
+
+      if (socket.connected) {
+        onConnect();
+      }
+
+      const playNotificationSound = () => {
+        try {
+          // Play a professional 'pop' notification sound
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          audio.volume = 0.5; // Set volume to 50% so it's not too loud
+          audio.play().catch(e => {
+            console.log("Audio autoplay blocked by browser. User needs to interact with the page first.");
+          });
+        } catch (e) {
+          console.error('Audio play failed:', e);
+        }
+      };
 
       const handleNewUser = (newUser) => {
+        playNotificationSound();
         toast.success(`New user ${newUser.name} just joined!`, { icon: '👋', duration: 5000 });
         dispatch(userAddedRealtime(newUser));
         dispatch(addNotification({
           id: Date.now().toString(),
           title: 'New Registration 🎉',
-          message: `${newUser.name} (${newUser.email}) just registered as a ${newUser.role}.`,
+          message: `${newUser.name} (${newUser.email}) just registered.`,
+          userName: newUser.name,
           read: false,
           time: new Date().toISOString()
         }));
@@ -45,11 +80,12 @@ const AppContent = () => {
       socket.on('NEW_USER_REGISTERED', handleNewUser);
 
       return () => {
+        socket.off('connect', onConnect);
         socket.off('NEW_USER_REGISTERED', handleNewUser);
         socket.disconnect();
       };
     }
-  }, [user, dispatch]);
+  }, [user?.role, dispatch]);
 
   const theme = useMemo(() => {
     const isDark = themeMode === 'dark';
