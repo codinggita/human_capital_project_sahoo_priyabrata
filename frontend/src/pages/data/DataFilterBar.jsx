@@ -15,7 +15,7 @@ const DataFilterBar = ({
   selectShadow 
 }) => {
   return (
-    <Box sx={{ display: 'flex', gap: 2, height: '100%', alignItems: 'center', flexWrap: 'wrap' }}>
+    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, height: { xs: 'auto', md: '100%' }, alignItems: { xs: 'stretch', md: 'center' } }}>
       <Input
         placeholder="Search indicators (e.g. CPI)..."
         value={searchTerm}
@@ -55,7 +55,7 @@ const DataFilterBar = ({
           variant="contained"
           color="primary"
           onClick={handleAddNewClick}
-          sx={{ height: 40, px: 3, display: 'flex', alignItems: 'center', gap: 1 }}
+          sx={{ height: 40, px: 3, display: 'flex', alignItems: 'center', gap: 1, width: { xs: '100%', md: 'auto' } }}
         >
           <FiPlus size={16} /> Add Record
         </CustomButton>

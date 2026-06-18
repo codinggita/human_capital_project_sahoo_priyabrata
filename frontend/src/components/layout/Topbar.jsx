@@ -157,7 +157,7 @@ const Topbar = () => {
             onClick={handleNotificationClick}
             size="small"
             sx={{
-              display: { xs: 'none', sm: 'flex' },
+              display: 'flex',
               width: 38,
               height: 38,
               borderRadius: '14px',
@@ -169,7 +169,7 @@ const Topbar = () => {
               color: 'text.secondary',
             }}
           >
-            <Badge badgeContent={unreadCount} color="error" variant="dot" invisible={unreadCount === 0}>
+            <Badge badgeContent={unreadCount} color="error" invisible={unreadCount === 0}>
               <FiBell size={16} />
             </Badge>
           </IconButton>
@@ -183,7 +183,10 @@ const Topbar = () => {
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             PaperProps={{
               sx: {
-                mt: 1.5, width: 320, maxHeight: 400,
+                mt: 1.5, 
+                width: { xs: '90vw', sm: 320 }, 
+                maxWidth: 360,
+                maxHeight: 400,
                 bgcolor: isDark ? '#1a1f2e' : '#E6ECF5',
                 backgroundImage: 'none',
                 boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.8)' : '0 8px 24px rgba(149,157,165,0.2)',
@@ -203,12 +206,19 @@ const Topbar = () => {
               </Box>
             ) : (
               notificationsList.map((notif) => (
-                <MenuItem key={notif.id} sx={{ px: 2, py: 1.5, borderBottom: isDark ? '1px solid rgba(255,255,255,0.03)' : '1px solid rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: isDark ? '#f0f4ff' : '#1E293B' }}>{notif.title}</Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.3, whiteSpace: 'normal' }}>{notif.message}</Typography>
-                  <Typography variant="caption" sx={{ color: 'primary.main', fontSize: '0.65rem', mt: 1, fontWeight: 700 }}>
-                    {new Date(notif.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </Typography>
+                <MenuItem key={notif.id} sx={{ px: 2, py: 1.5, borderBottom: isDark ? '1px solid rgba(255,255,255,0.03)' : '1px solid rgba(0,0,0,0.03)', display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                  {notif.userName && (
+                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', color: 'white', fontSize: '0.875rem', fontWeight: 'bold', mt: 0.5 }}>
+                      {notif.userName.charAt(0).toUpperCase()}
+                    </Avatar>
+                  )}
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: isDark ? '#f0f4ff' : '#1E293B' }}>{notif.title}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.3, whiteSpace: 'normal' }}>{notif.message}</Typography>
+                    <Typography variant="caption" sx={{ color: 'primary.main', fontSize: '0.65rem', mt: 1, fontWeight: 700 }}>
+                      {new Date(notif.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </Typography>
+                  </Box>
                 </MenuItem>
               ))
             )}

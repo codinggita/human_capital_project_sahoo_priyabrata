@@ -37,6 +37,7 @@ const register = asyncHandler(async (req, res) => {
 
   const io = req.app.get("io");
   if (io) {
+    console.log("Emitting NEW_USER_REGISTERED to admin_room for user:", data.email);
     io.to("admin_room").emit("NEW_USER_REGISTERED", {
       _id: data._id,
       id: data._id,
@@ -45,6 +46,8 @@ const register = asyncHandler(async (req, res) => {
       role: data.role,
       avatar: data.avatar,
     });
+  } else {
+    console.log("Socket.io instance not found in req.app");
   }
 
   return successResponse(res, 201, "User registered successfully", {

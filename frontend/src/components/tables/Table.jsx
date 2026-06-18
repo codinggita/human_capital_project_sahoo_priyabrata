@@ -41,7 +41,7 @@ const Table = ({
 
   return (
     <Paper elevation={0} sx={{ backgroundColor: 'transparent', boxShadow: 'none' }}>
-      <TableContainer sx={{ maxHeight: 700, px: 1, py: 1 }}>
+      <TableContainer sx={{ maxHeight: 700, width: '100%', overflowX: 'auto', px: 1, py: 1 }}>
         <MuiTable sx={{ minWidth: 650, borderCollapse: 'separate', borderSpacing: '0 12px' }}>
           <TableHead>
             <TableRow>
